@@ -1,0 +1,131 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-01-create-auth-tables
+      author: codex
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS pgcrypto;
+        - createTable:
+            tableName: users
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: email, type: varchar(255), constraints: { nullable: false, unique: true } }
+              - column: { name: phone, type: varchar(32), constraints: { unique: true } }
+              - column: { name: full_name, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: password_hash, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: status, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+              - column: { name: updated_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - createTable:
+            tableName: roles
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: code, type: varchar(64), constraints: { nullable: false, unique: true } }
+        - createTable:
+            tableName: permissions
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: code, type: varchar(100), constraints: { nullable: false, unique: true } }
+              - column: { name: description, type: varchar(255) }
+        - createTable:
+            tableName: user_roles
+            columns:
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: role_id, type: uuid, constraints: { nullable: false } }
+        - addPrimaryKey:
+            tableName: user_roles
+            columnNames: user_id, role_id
+            constraintName: pk_user_roles
+        - addForeignKeyConstraint:
+            baseTableName: user_roles
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_user_roles_user
+        - addForeignKeyConstraint:
+            baseTableName: user_roles
+            baseColumnNames: role_id
+            referencedTableName: roles
+            referencedColumnNames: id
+            constraintName: fk_user_roles_role
+        - createTable:
+            tableName: role_permissions
+            columns:
+              - column: { name: role_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: permission_id, type: uuid, constraints: { nullable: false } }
+        - addPrimaryKey:
+            tableName: role_permissions
+            columnNames: role_id, permission_id
+            constraintName: pk_role_permissions
+        - addForeignKeyConstraint:
+            baseTableName: role_permissions
+            baseColumnNames: role_id
+            referencedTableName: roles
+            referencedColumnNames: id
+            constraintName: fk_role_permissions_role
+        - addForeignKeyConstraint:
+            baseTableName: role_permissions
+            baseColumnNames: permission_id
+            referencedTableName: permissions
+            referencedColumnNames: id
+            constraintName: fk_role_permissions_permission
+        - createTable:
+            tableName: user_sessions
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: refresh_jti, type: varchar(255), constraints: { nullable: false, unique: true } }
+              - column: { name: expires_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: revoked_at, type: timestamp with time zone }
+              - column: { name: user_agent, type: varchar(500) }
+              - column: { name: ip, type: varchar(64) }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: user_sessions
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_user_sessions_user
+        - createIndex: { tableName: users, indexName: idx_users_status, columns: [ { column: { name: status } } ] }
+        - createIndex: { tableName: user_sessions, indexName: idx_user_sessions_user_id, columns: [ { column: { name: user_id } } ] }
+  - changeSet:
+      id: 001-02-seed-auth
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO roles (id, code) VALUES
+              ('00000000-0000-0000-0000-000000000001', 'ADMIN'),
+              ('00000000-0000-0000-0000-000000000002', 'TEACHER'),
+              ('00000000-0000-0000-0000-000000000003', 'STUDENT')
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO permissions (id, code, description)
+              VALUES
+              (gen_random_uuid(), 'auth.manage', 'auth placeholder'),
+              (gen_random_uuid(), 'users.manage', 'users placeholder'),
+              (gen_random_uuid(), 'courses.manage', 'courses placeholder'),
+              (gen_random_uuid(), 'enrollment.manage', 'enrollment placeholder'),
+              (gen_random_uuid(), 'zoom.manage', 'zoom placeholder'),
+              (gen_random_uuid(), 'video.manage', 'video placeholder'),
+              (gen_random_uuid(), 'exam.manage', 'exam placeholder'),
+              (gen_random_uuid(), 'certificate.manage', 'certificate placeholder')
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO role_permissions(role_id, permission_id)
+              SELECT '00000000-0000-0000-0000-000000000001', p.id FROM permissions p
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO users(id, email, phone, full_name, password_hash, status)
+              VALUES(
+                  '10000000-0000-0000-0000-000000000001',
+                  'admin@local',
+                  '+998000000000',
+                  'Local Admin',
+                  '$2a$10$7EqJtq98hPqEX7fNZaFWoO5m.RH6x9U8YJz35e5M6f9fZ80M5M6jG',
+                  'ACTIVE'
+              ) ON CONFLICT DO NOTHING;
+
+              INSERT INTO user_roles(user_id, role_id)
+              VALUES ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001')
+              ON CONFLICT DO NOTHING;

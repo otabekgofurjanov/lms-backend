@@ -1,0 +1,130 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-video-001
+      author: codex
+      changes:
+        - createTable:
+            tableName: lesson_recordings
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: lesson_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: zoom_recording_id
+                  type: varchar(100)
+              - column:
+                  name: status
+                  type: varchar(20)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: recorded_at
+                  type: timestamptz
+              - column:
+                  name: error_message
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: lesson_recordings
+            baseColumnNames: lesson_id
+            referencedTableName: lessons
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_lesson_recordings_lesson
+        - addUniqueConstraint:
+            tableName: lesson_recordings
+            columnNames: lesson_id
+            constraintName: uq_lesson_recordings_lesson
+        - addCheckConstraint:
+            tableName: lesson_recordings
+            constraintName: ck_lesson_recordings_status
+            checkConstraint: status IN ('PENDING','PROCESSING','READY','FAILED')
+        - createIndex:
+            tableName: lesson_recordings
+            indexName: idx_lesson_recordings_lesson
+            columns:
+              - column:
+                  name: lesson_id
+        - createIndex:
+            tableName: lesson_recordings
+            indexName: idx_lesson_recordings_status
+            columns:
+              - column:
+                  name: status
+
+  - changeSet:
+      id: 007-video-002
+      author: codex
+      changes:
+        - createTable:
+            tableName: video_assets
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: recording_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_provider
+                  type: varchar(20)
+                  defaultValue: MINIO
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bucket
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: object_key
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content_type
+                  type: varchar(100)
+              - column:
+                  name: size_bytes
+                  type: bigint
+              - column:
+                  name: checksum_sha256
+                  type: varchar(64)
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: video_assets
+            baseColumnNames: recording_id
+            referencedTableName: lesson_recordings
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_video_assets_recording
+        - createIndex:
+            tableName: video_assets
+            indexName: idx_video_assets_recording
+            columns:
+              - column:
+                  name: recording_id

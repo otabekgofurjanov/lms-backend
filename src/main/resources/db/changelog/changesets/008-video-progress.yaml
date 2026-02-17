@@ -1,0 +1,90 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-video-progress-001
+      author: codex
+      changes:
+        - createTable:
+            tableName: video_progress
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: student_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lesson_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: watched_seconds
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_seconds
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completion_pct
+                  type: numeric(5,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_event_at
+                  type: timestamptz
+              - column:
+                  name: suspicious_flags
+                  type: jsonb
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: video_progress
+            baseColumnNames: student_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_video_progress_student
+        - addForeignKeyConstraint:
+            baseTableName: video_progress
+            baseColumnNames: lesson_id
+            referencedTableName: lessons
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_video_progress_lesson
+        - addUniqueConstraint:
+            tableName: video_progress
+            columnNames: student_id,lesson_id
+            constraintName: uq_video_progress_student_lesson
+        - createIndex:
+            tableName: video_progress
+            indexName: idx_video_progress_student
+            columns:
+              - column:
+                  name: student_id
+        - createIndex:
+            tableName: video_progress
+            indexName: idx_video_progress_lesson
+            columns:
+              - column:
+                  name: lesson_id

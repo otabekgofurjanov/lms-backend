@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-01-create-courses
+      author: codex
+      changes:
+        - createTable:
+            tableName: courses
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: title, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: description, type: text }
+              - column: { name: cover_url, type: text }
+              - column: { name: status, type: varchar(32), defaultValue: DRAFT, constraints: { nullable: false } }
+              - column: { name: created_by, type: uuid, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+              - column: { name: updated_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: courses
+            baseColumnNames: created_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_courses_created_by
+        - createIndex: { tableName: courses, indexName: idx_courses_status, columns: [ { column: { name: status } } ] }
+        - createIndex: { tableName: courses, indexName: idx_courses_created_by, columns: [ { column: { name: created_by } } ] }
+        - createIndex: { tableName: courses, indexName: idx_courses_title, columns: [ { column: { name: title } } ] }
+        - addCheckConstraint:
+            tableName: courses
+            constraintName: chk_courses_status
+            constraintBody: "status IN ('DRAFT','ACTIVE','ARCHIVED')"
+
+  - changeSet:
+      id: 003-02-create-course-modules
+      author: codex
+      changes:
+        - createTable:
+            tableName: course_modules
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: course_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: title, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: sort_order, type: int, defaultValueNumeric: 0, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: course_modules
+            baseColumnNames: course_id
+            referencedTableName: courses
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_modules_course
+        - createIndex: { tableName: course_modules, indexName: idx_modules_course_id, columns: [ { column: { name: course_id } } ] }
+        - addUniqueConstraint:
+            tableName: course_modules
+            columnNames: course_id, sort_order
+            constraintName: uq_modules_course_sort
+
+  - changeSet:
+      id: 003-03-create-lessons
+      author: codex
+      changes:
+        - createTable:
+            tableName: lessons
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: module_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: title, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: lesson_type, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: sort_order, type: int, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: available_at, type: timestamp with time zone }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+              - column: { name: updated_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: lessons
+            baseColumnNames: module_id
+            referencedTableName: course_modules
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_lessons_module
+        - createIndex: { tableName: lessons, indexName: idx_lessons_module_id, columns: [ { column: { name: module_id } } ] }
+        - addUniqueConstraint:
+            tableName: lessons
+            columnNames: module_id, sort_order
+            constraintName: uq_lessons_module_sort
+        - addCheckConstraint:
+            tableName: lessons
+            constraintName: chk_lessons_type
+            constraintBody: "lesson_type IN ('LIVE_ZOOM','RECORDED')"

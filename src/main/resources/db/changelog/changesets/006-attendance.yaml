@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-01-zoom-fields
+      author: codex
+      changes:
+        - addColumn:
+            tableName: zoom_participants
+            columns:
+              - column: { name: matched_by, type: varchar(20) }
+              - column: { name: matched_at, type: timestamp with time zone }
+        - createIndex: { tableName: zoom_participants, indexName: idx_zoom_participants_matched, columns: [ { column: { name: student_id } } ] }
+        - addColumn:
+            tableName: zoom_meetings
+            columns:
+              - column: { name: actual_start_time, type: timestamp with time zone }
+              - column: { name: actual_end_time, type: timestamp with time zone }
+
+  - changeSet:
+      id: 006-02-course-progress
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: course_progress
+      changes:
+        - createTable:
+            tableName: course_progress
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: course_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: student_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: attendance_pct, type: numeric(5,2), defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(30), defaultValue: IN_PROGRESS, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addUniqueConstraint:
+            tableName: course_progress
+            columnNames: course_id, student_id
+            constraintName: uq_course_progress_course_student
+        - addForeignKeyConstraint:
+            baseTableName: course_progress
+            baseColumnNames: course_id
+            referencedTableName: courses
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_course_progress_course
+        - addForeignKeyConstraint:
+            baseTableName: course_progress
+            baseColumnNames: student_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_course_progress_student

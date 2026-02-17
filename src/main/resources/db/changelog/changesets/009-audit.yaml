@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-01-create-audit-logs
+      author: codex
+      changes:
+        - createTable:
+            tableName: audit_logs
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: actor_user_id, type: uuid }
+              - column: { name: action, type: varchar(100), constraints: { nullable: false } }
+              - column: { name: entity_type, type: varchar(100), constraints: { nullable: false } }
+              - column: { name: entity_id, type: varchar(100) }
+              - column: { name: before_data, type: jsonb }
+              - column: { name: after_data, type: jsonb }
+              - column: { name: ip, type: varchar(64) }
+              - column: { name: user_agent, type: varchar(500) }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: audit_logs
+            baseColumnNames: actor_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_audit_actor_user
+        - createIndex: { tableName: audit_logs, indexName: idx_audit_actor, columns: [ { column: { name: actor_user_id } } ] }
+        - createIndex: { tableName: audit_logs, indexName: idx_audit_action_entity, columns: [ { column: { name: action } }, { column: { name: entity_type } } ] }
+        - createIndex: { tableName: audit_logs, indexName: idx_audit_created_at, columns: [ { column: { name: created_at } } ] }

@@ -1,0 +1,178 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-exam-001
+      author: codex
+      changes:
+        - createTable:
+            tableName: quizzes
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: course_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: lesson_id, type: uuid }
+              - column: { name: title, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: time_limit_sec, type: int }
+              - column: { name: max_attempts, type: int, defaultValueNumeric: 3, constraints: { nullable: false } }
+              - column: { name: pass_score_pct, type: numeric(5,2), defaultValueNumeric: 70, constraints: { nullable: false } }
+              - column: { name: is_active, type: boolean, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: created_by, type: uuid, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: quizzes
+            baseColumnNames: course_id
+            referencedTableName: courses
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_quizzes_course
+        - addForeignKeyConstraint:
+            baseTableName: quizzes
+            baseColumnNames: lesson_id
+            referencedTableName: lessons
+            referencedColumnNames: id
+            onDelete: SET NULL
+            constraintName: fk_quizzes_lesson
+        - addForeignKeyConstraint:
+            baseTableName: quizzes
+            baseColumnNames: created_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_quizzes_created_by
+        - createIndex:
+            tableName: quizzes
+            indexName: idx_quizzes_course
+            columns:
+              - column: { name: course_id }
+        - createIndex:
+            tableName: quizzes
+            indexName: idx_quizzes_lesson
+            columns:
+              - column: { name: lesson_id }
+
+  - changeSet:
+      id: 009-exam-002
+      author: codex
+      changes:
+        - createTable:
+            tableName: questions
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: question_type, type: varchar(20), defaultValue: MCQ, constraints: { nullable: false } }
+              - column: { name: text, type: text, constraints: { nullable: false } }
+              - column: { name: options, type: jsonb, constraints: { nullable: false } }
+              - column: { name: correct_index, type: int, constraints: { nullable: false } }
+              - column: { name: explanation, type: text }
+              - column: { name: created_by, type: uuid }
+              - column: { name: created_at, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: questions
+            baseColumnNames: created_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_questions_created_by
+        - createIndex:
+            tableName: questions
+            indexName: idx_questions_created_by
+            columns:
+              - column: { name: created_by }
+
+  - changeSet:
+      id: 009-exam-003
+      author: codex
+      changes:
+        - createTable:
+            tableName: quiz_questions
+            columns:
+              - column: { name: quiz_id, type: uuid, constraints: { nullable: false, primaryKey: true } }
+              - column: { name: question_id, type: uuid, constraints: { nullable: false, primaryKey: true } }
+              - column: { name: sort_order, type: int, defaultValueNumeric: 0, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: quiz_questions
+            baseColumnNames: quiz_id
+            referencedTableName: quizzes
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_quiz_questions_quiz
+        - addForeignKeyConstraint:
+            baseTableName: quiz_questions
+            baseColumnNames: question_id
+            referencedTableName: questions
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            constraintName: fk_quiz_questions_question
+
+  - changeSet:
+      id: 009-exam-004
+      author: codex
+      changes:
+        - createTable:
+            tableName: quiz_attempts
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: quiz_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: student_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: attempt_no, type: int, constraints: { nullable: false } }
+              - column: { name: started_at, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: finished_at, type: timestamptz }
+              - column: { name: score_pct, type: numeric(5,2) }
+              - column: { name: correct_count, type: int }
+              - column: { name: total_questions, type: int }
+              - column: { name: status, type: varchar(20), defaultValue: STARTED, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: quiz_attempts
+            baseColumnNames: quiz_id
+            referencedTableName: quizzes
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_attempts_quiz
+        - addForeignKeyConstraint:
+            baseTableName: quiz_attempts
+            baseColumnNames: student_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_attempts_student
+        - addUniqueConstraint:
+            tableName: quiz_attempts
+            columnNames: quiz_id,student_id,attempt_no
+            constraintName: uq_attempt_quiz_student_no
+        - createIndex:
+            tableName: quiz_attempts
+            indexName: idx_attempts_student
+            columns:
+              - column: { name: student_id }
+        - createIndex:
+            tableName: quiz_attempts
+            indexName: idx_attempts_quiz
+            columns:
+              - column: { name: quiz_id }
+
+  - changeSet:
+      id: 009-exam-005
+      author: codex
+      changes:
+        - createTable:
+            tableName: quiz_attempt_answers
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: attempt_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: question_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: selected_index, type: int }
+              - column: { name: is_correct, type: boolean }
+              - column: { name: answered_at, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: quiz_attempt_answers
+            baseColumnNames: attempt_id
+            referencedTableName: quiz_attempts
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_attempt_answers_attempt
+        - addForeignKeyConstraint:
+            baseTableName: quiz_attempt_answers
+            baseColumnNames: question_id
+            referencedTableName: questions
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            constraintName: fk_attempt_answers_question
+        - addUniqueConstraint:
+            tableName: quiz_attempt_answers
+            columnNames: attempt_id,question_id
+            constraintName: uq_attempt_answer

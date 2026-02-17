@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lms
+    username: lms
+    password: lms
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+minio:
+  url: http://localhost:9000
+  access-key: minio
+  secret-key: minio123
+  bucket: lms
+  presigned-expiry-seconds: 3600
+
+zoom:
+  client-id: ${ZOOM_CLIENT_ID:local-client-id}
+  client-secret: ${ZOOM_CLIENT_SECRET:local-client-secret}
+  redirect-uri: ${ZOOM_REDIRECT_URI:http://localhost:8080/api/zoom/oauth/callback}
+  webhook-secret: ${ZOOM_WEBHOOK_SECRET:local-webhook-secret}
+  api-base-url: ${ZOOM_API_BASE_URL:https://api.zoom.us/v2}
+
+lms:
+  attendance:
+    present-threshold-pct: ${LMS_ATTENDANCE_PRESENT_THRESHOLD_PCT:70}
+    late-threshold-pct: ${LMS_ATTENDANCE_LATE_THRESHOLD_PCT:30}
+  video:
+    progress-ping-min-interval-seconds: 5
+    flush-interval-seconds: 60
+    required-completion-pct-to-unlock-quiz: 90
+    suspicious:
+      tab-switch-threshold: 5
+      seek-attempt-threshold: 3

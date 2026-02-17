@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changesets/001-auth.yaml
+  - include:
+      file: db/changelog/changesets/002-users.yaml
+  - include:
+      file: db/changelog/changesets/003-courses.yaml
+  - include:
+      file: db/changelog/changesets/004-enrollment.yaml
+  - include:
+      file: db/changelog/changesets/005-zoom.yaml
+  - include:
+      file: db/changelog/changesets/006-attendance.yaml
+  - include:
+      file: db/changelog/changesets/007-video.yaml
+  - include:
+      file: db/changelog/changesets/008-video-progress.yaml
+  - include:
+      file: db/changelog/changesets/009-exam.yaml
+  - include:
+      file: db/changelog/changesets/009-audit.yaml
