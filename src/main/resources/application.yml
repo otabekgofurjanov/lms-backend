@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: lms-backend
+  profiles:
+    default: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lms
+    username: lms
+    password: lms
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  error:
+    include-message: always
+
+security:
+  jwt:
+    secret: 1234567890123456789012345678901234567890123456789012345678901234
+    access-minutes: 30
+    refresh-days: 7
+    issuer: lms-backend
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+
+zoom:
+  client-id: ${ZOOM_CLIENT_ID:}
+  client-secret: ${ZOOM_CLIENT_SECRET:}
+  redirect-uri: ${ZOOM_REDIRECT_URI:http://localhost:8080/api/zoom/oauth/callback}
+  webhook-secret: ${ZOOM_WEBHOOK_SECRET:}
+  api-base-url: ${ZOOM_API_BASE_URL:https://api.zoom.us/v2}
+
+
+lms:
+  attendance:
+    present-threshold-pct: ${LMS_ATTENDANCE_PRESENT_THRESHOLD_PCT:70}
+    late-threshold-pct: ${LMS_ATTENDANCE_LATE_THRESHOLD_PCT:30}
+
+  video:
+    progress-ping-min-interval-seconds: ${LMS_VIDEO_PROGRESS_PING_MIN_INTERVAL_SECONDS:5}
+    flush-interval-seconds: ${LMS_VIDEO_FLUSH_INTERVAL_SECONDS:60}
+    required-completion-pct-to-unlock-quiz: ${LMS_VIDEO_REQUIRED_COMPLETION_PCT_TO_UNLOCK_QUIZ:90}
+    suspicious:
+      tab-switch-threshold: ${LMS_VIDEO_SUSPICIOUS_TAB_SWITCH_THRESHOLD:5}
+      seek-attempt-threshold: ${LMS_VIDEO_SUSPICIOUS_SEEK_ATTEMPT_THRESHOLD:3}
+
+
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minio}
+  secret-key: ${MINIO_SECRET_KEY:minio123}
+  bucket: ${MINIO_BUCKET:lms}
+  presigned-expiry-seconds: ${MINIO_PRESIGNED_EXPIRY_SECONDS:3600}

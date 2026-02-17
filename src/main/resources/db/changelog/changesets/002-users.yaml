@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-01-users-hardening
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        tableExists:
+          tableName: users
+      changes:
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email ON users (email);
+              CREATE UNIQUE INDEX IF NOT EXISTS uq_users_phone ON users (phone);
+              CREATE INDEX IF NOT EXISTS idx_users_status ON users (status);
+              CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+              ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_users_status;
+              ALTER TABLE users ADD CONSTRAINT chk_users_status CHECK (status IN ('ACTIVE', 'BLOCKED', 'DELETED'));

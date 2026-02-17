@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-01-create-enrollments
+      author: codex
+      changes:
+        - createTable:
+            tableName: enrollments
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: course_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: student_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(20), defaultValue: ACTIVE, constraints: { nullable: false } }
+              - column: { name: enrolled_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: enrollments
+            baseColumnNames: course_id
+            referencedTableName: courses
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_enrollments_course
+        - addForeignKeyConstraint:
+            baseTableName: enrollments
+            baseColumnNames: student_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_enrollments_student
+        - addUniqueConstraint:
+            tableName: enrollments
+            columnNames: course_id, student_id
+            constraintName: uq_enrollments_course_student
+        - createIndex: { tableName: enrollments, indexName: idx_enrollments_course_id, columns: [ { column: { name: course_id } } ] }
+        - createIndex: { tableName: enrollments, indexName: idx_enrollments_student_id, columns: [ { column: { name: student_id } } ] }
+        - createIndex: { tableName: enrollments, indexName: idx_enrollments_status, columns: [ { column: { name: status } } ] }
+        - addCheckConstraint:
+            tableName: enrollments
+            constraintName: chk_enrollments_status
+            constraintBody: "status IN ('ACTIVE','PAUSED','REMOVED')"

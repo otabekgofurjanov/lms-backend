@@ -1,0 +1,124 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-01-create-zoom-accounts
+      author: codex
+      changes:
+        - createTable:
+            tableName: zoom_accounts
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: owner_user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: account_email, type: varchar(255) }
+              - column: { name: access_token, type: text }
+              - column: { name: refresh_token, type: text }
+              - column: { name: token_expires_at, type: timestamp with time zone }
+              - column: { name: status, type: varchar(20), constraints: { nullable: false }, defaultValue: DISCONNECTED }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+              - column: { name: updated_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: zoom_accounts
+            baseColumnNames: owner_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_zoom_accounts_owner
+        - createIndex: { tableName: zoom_accounts, indexName: idx_zoom_accounts_owner, columns: [ { column: { name: owner_user_id } } ] }
+        - addCheckConstraint:
+            tableName: zoom_accounts
+            constraintName: chk_zoom_accounts_status
+            constraintBody: "status IN ('CONNECTED','DISCONNECTED')"
+
+  - changeSet:
+      id: 005-02-create-zoom-meetings
+      author: codex
+      changes:
+        - createTable:
+            tableName: zoom_meetings
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: lesson_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: zoom_account_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: zoom_meeting_id, type: varchar(50), constraints: { nullable: false, unique: true } }
+              - column: { name: join_url, type: text }
+              - column: { name: start_time, type: timestamp with time zone }
+              - column: { name: duration_minutes, type: int }
+              - column: { name: status, type: varchar(20), constraints: { nullable: false }, defaultValue: SCHEDULED }
+              - column: { name: created_by, type: uuid, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: zoom_meetings
+            baseColumnNames: lesson_id
+            referencedTableName: lessons
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_zoom_meetings_lesson
+        - addForeignKeyConstraint:
+            baseTableName: zoom_meetings
+            baseColumnNames: zoom_account_id
+            referencedTableName: zoom_accounts
+            referencedColumnNames: id
+            constraintName: fk_zoom_meetings_account
+        - addForeignKeyConstraint:
+            baseTableName: zoom_meetings
+            baseColumnNames: created_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_zoom_meetings_created_by
+        - createIndex: { tableName: zoom_meetings, indexName: idx_zoom_meetings_lesson, columns: [ { column: { name: lesson_id } } ] }
+        - createIndex: { tableName: zoom_meetings, indexName: idx_zoom_meetings_status, columns: [ { column: { name: status } } ] }
+        - addCheckConstraint:
+            tableName: zoom_meetings
+            constraintName: chk_zoom_meetings_status
+            constraintBody: "status IN ('SCHEDULED','LIVE','ENDED')"
+
+  - changeSet:
+      id: 005-03-create-zoom-participants
+      author: codex
+      changes:
+        - createTable:
+            tableName: zoom_participants
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: zoom_meeting_id_fk, type: uuid, constraints: { nullable: false } }
+              - column: { name: student_id, type: uuid }
+              - column: { name: zoom_user_id, type: varchar(100) }
+              - column: { name: display_name, type: varchar(255) }
+              - column: { name: join_time, type: timestamp with time zone }
+              - column: { name: leave_time, type: timestamp with time zone }
+              - column: { name: duration_seconds, type: int, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: attendance_status, type: varchar(20), defaultValue: UNKNOWN, constraints: { nullable: false } }
+              - column: { name: raw_payload, type: jsonb, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: zoom_participants
+            baseColumnNames: zoom_meeting_id_fk
+            referencedTableName: zoom_meetings
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_zoom_participants_meeting
+        - addForeignKeyConstraint:
+            baseTableName: zoom_participants
+            baseColumnNames: student_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_zoom_participants_student
+        - createIndex: { tableName: zoom_participants, indexName: idx_zoom_participants_meeting, columns: [ { column: { name: zoom_meeting_id_fk } } ] }
+        - createIndex: { tableName: zoom_participants, indexName: idx_zoom_participants_student, columns: [ { column: { name: student_id } } ] }
+
+  - changeSet:
+      id: 005-04-create-zoom-oauth-states
+      author: codex
+      changes:
+        - createTable:
+            tableName: zoom_oauth_states
+            columns:
+              - column: { name: state, type: varchar(255), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: owner_user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: expires_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: zoom_oauth_states
+            baseColumnNames: owner_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_zoom_oauth_states_owner
